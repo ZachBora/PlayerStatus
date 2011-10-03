@@ -1,0 +1,33 @@
+name: PlayerStatus
+main: com.worldcretornica.playerstatus.PlayerStatus
+version: 2.2
+description: >
+             Allows players to change their status
+commands:
+    afk:
+        description: Makes a player afk. People you msg the player will be notified.
+        usage: afk
+    dnd:
+        description: Makes a player do not disturb. People you msg the player will be notified.
+        usage: dnd
+    nochat:
+        description: Disables regular chat and emotes.
+        usage: nochat
+    nomsg:
+        description: Disables private messages. People you msg the player will be notified.
+        usage: nomsg
+    playerstatus:
+        description: Displays version and current player status
+        usage: playerstatus
+    ignore:
+        description: Ignores another player
+        usage: ignore name
+    ignorelist:
+        description: Display the list of ignored players
+        usage: ignorelist
+    mute:
+        description: Mute a player for everyone
+        usage: mute
+    unmute:
+        description: Unmute a player for everyone
+        usage: unmute
