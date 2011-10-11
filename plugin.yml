@@ -1,6 +1,6 @@
 name: PlayerStatus
 main: com.worldcretornica.playerstatus.PlayerStatus
-version: 2.2
+version: 2.4
 description: >
              Allows players to change their status
 commands:
@@ -31,3 +31,9 @@ commands:
     unmute:
         description: Unmute a player for everyone
         usage: unmute
+    playerstatuslang:
+        description: Sets the current language
+        usage: playerstatuslang
+    moderate:
+        description: Mutes everyone except admins
+        usage: moderate

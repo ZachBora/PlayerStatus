@@ -24,6 +24,10 @@ public class ExPlayer  {
 	public boolean isNomsg;
 	public boolean isNochat;
 	public boolean isMuted;
+	public Player LastMessenger;
+	public long timeAfked;
+	public long timeDnded;
+	public long timeUnset;
 	
 	public Set<Player> ignoredplayers;
 	
