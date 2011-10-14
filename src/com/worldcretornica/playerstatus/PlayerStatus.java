@@ -1,8 +1,10 @@
 package com.worldcretornica.playerstatus;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,6 +39,9 @@ public class PlayerStatus extends JavaPlugin {
 	
 	public YamlConfiguration configlanguage;
 	public YamlConfiguration configmain;
+	
+	public ArrayList<String> loginquote = new ArrayList<String>();
+	public ArrayList<String> quitquote = new ArrayList<String>();
 	
 	public String pdfdescription;
 	private String pdfversion;
@@ -81,7 +86,7 @@ public class PlayerStatus extends JavaPlugin {
 		{
 			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.afk"))
 			{
-				sender.sendMessage(ChatColor.RED + "[" + pdfdescription + "] " + configlanguage.getString("MsgPermissionDenied"));
+				sender.sendMessage(ChatColor.RED + "[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
 			toggleAfk(getExPlayer((Player) sender));
@@ -89,7 +94,7 @@ public class PlayerStatus extends JavaPlugin {
 		}else if (commandlabel.equalsIgnoreCase("dnd")){
 			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.dnd"))
 			{
-				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + configlanguage.getString("MsgPermissionDenied"));
+				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
 			toggleDnd(getExPlayer((Player) sender));
@@ -97,7 +102,7 @@ public class PlayerStatus extends JavaPlugin {
 		}else if (commandlabel.equalsIgnoreCase("nochat")){
 			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.nochat"))
 			{
-				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + configlanguage.getString("MsgPermissionDenied"));
+				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
 			toggleNochat(getExPlayer((Player) sender));
@@ -105,7 +110,7 @@ public class PlayerStatus extends JavaPlugin {
 		}else if (commandlabel.equalsIgnoreCase("nomsg")){
 			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.nomessage"))
 			{
-				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + configlanguage.getString("MsgPermissionDenied"));
+				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
 			toggleNomsg(getExPlayer((Player) sender));
@@ -113,15 +118,15 @@ public class PlayerStatus extends JavaPlugin {
 		}else if (commandlabel.equalsIgnoreCase("ignore") && args.length == 0){
 			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.ignore"))
 			{
-				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + configlanguage.getString("MsgPermissionDenied"));
+				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
-			sender.sendMessage(ChatColor.RED + configlanguage.getString("MsgIgnoreSyntax"));
+			sender.sendMessage(ChatColor.RED + getLangConfig("MsgIgnoreSyntax"));
 			return true;
 		}else if (commandlabel.equalsIgnoreCase("ignore") && args.length == 1){
 			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.ignore"))
 			{
-				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + configlanguage.getString("MsgPermissionDenied"));
+				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
 			
@@ -135,7 +140,7 @@ public class PlayerStatus extends JavaPlugin {
 		}else if (commandlabel.equalsIgnoreCase("ignorelist")){
 			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.ignore"))
 			{
-				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + configlanguage.getString("MsgPermissionDenied"));
+				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
 			displayIgnoreList(getExPlayer((Player) sender));
@@ -143,7 +148,7 @@ public class PlayerStatus extends JavaPlugin {
 		}else if (commandlabel.equalsIgnoreCase("mute")){
 			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.mute"))
 			{
-				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + configlanguage.getString("MsgPermissionDenied"));
+				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
 			
@@ -157,7 +162,7 @@ public class PlayerStatus extends JavaPlugin {
 		}else if (commandlabel.equalsIgnoreCase("unmute")){
 			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.mute"))
 			{
-				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + configlanguage.getString("MsgPermissionDenied"));
+				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
 			
@@ -170,13 +175,13 @@ public class PlayerStatus extends JavaPlugin {
 			return true;
 		}else if (commandlabel.equalsIgnoreCase("playerstatus") && args.length == 0){
 			sender.sendMessage(ChatColor.BLUE + pdfdescription + " v" + pdfversion);
-			sender.sendMessage(ChatColor.RED + "/playerstatus " + ChatColor.GREEN + "<name> " + ChatColor.WHITE + configlanguage.getString("MsgHelpPlayerStatus"));
-			sender.sendMessage(ChatColor.RED + "/afk " + ChatColor.WHITE + configlanguage.getString("MsgHelpAfk") + " (" + ColoredStatus(isPlayerAfk(getExPlayer((Player) sender))) + ChatColor.WHITE + ")");
-			sender.sendMessage(ChatColor.RED + "/dnd " + ChatColor.WHITE + configlanguage.getString("MsgHelpDnd") + " (" + ColoredStatus(isPlayerDnd(getExPlayer((Player) sender))) + ChatColor.WHITE + ")");
-			sender.sendMessage(ChatColor.RED + "/nomsg " + ChatColor.WHITE + configlanguage.getString("MsgHelpNomsg") + " (" + ColoredStatus(isPlayerNoMsg(getExPlayer((Player) sender))) + ChatColor.WHITE + ")");
-			sender.sendMessage(ChatColor.RED + "/nochat " + ChatColor.WHITE + configlanguage.getString("MsgHelpNochat") + " (" + ColoredStatus(isPlayerNoChat(getExPlayer((Player) sender))) + ChatColor.WHITE + ")");
-			sender.sendMessage(ChatColor.RED + "/ignore <playername> " + ChatColor.WHITE + configlanguage.getString("MsgHelpIgnore"));
-			sender.sendMessage(ChatColor.RED + "/ignorelist " + ChatColor.WHITE + configlanguage.getString("MsgHelpIgnorelist"));
+			sender.sendMessage(ChatColor.RED + "/playerstatus " + ChatColor.GREEN + "<name> " + ChatColor.WHITE + getLangConfig("MsgHelpPlayerStatus"));
+			sender.sendMessage(ChatColor.RED + "/afk " + ChatColor.WHITE + getLangConfig("MsgHelpAfk") + " (" + ColoredStatus(isPlayerAfk(getExPlayer((Player) sender))) + ChatColor.WHITE + ")");
+			sender.sendMessage(ChatColor.RED + "/dnd " + ChatColor.WHITE + getLangConfig("MsgHelpDnd") + " (" + ColoredStatus(isPlayerDnd(getExPlayer((Player) sender))) + ChatColor.WHITE + ")");
+			sender.sendMessage(ChatColor.RED + "/nomsg " + ChatColor.WHITE + getLangConfig("MsgHelpNomsg") + " (" + ColoredStatus(isPlayerNoMsg(getExPlayer((Player) sender))) + ChatColor.WHITE + ")");
+			sender.sendMessage(ChatColor.RED + "/nochat " + ChatColor.WHITE + getLangConfig("MsgHelpNochat") + " (" + ColoredStatus(isPlayerNoChat(getExPlayer((Player) sender))) + ChatColor.WHITE + ")");
+			sender.sendMessage(ChatColor.RED + "/ignore <playername> " + ChatColor.WHITE + getLangConfig("MsgHelpIgnore"));
+			sender.sendMessage(ChatColor.RED + "/ignorelist " + ChatColor.WHITE + getLangConfig("MsgHelpIgnorelist"));
 			return true;
 		}else if (commandlabel.equalsIgnoreCase("playerstatus") && args != null && args.length == 1){
 			
@@ -184,20 +189,20 @@ public class PlayerStatus extends JavaPlugin {
 			
 			if (recipient != null)
 			{
-				sender.sendMessage(ChatColor.BLUE + configlanguage.getString("MsgStatusOf") + " " + recipient.getName() + ChatColor.WHITE + " : " + getStatus(getExPlayer(recipient)));
+				sender.sendMessage(ChatColor.BLUE + getLangConfig("MsgStatusOf") + " " + recipient.getName() + ChatColor.WHITE + " : " + getStatus(getExPlayer(recipient)));
 			}
 			return true;
 		}else if (commandlabel.equalsIgnoreCase("playerstatuslang"))
 		{
 			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.config"))
 			{
-				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + configlanguage.getString("MsgPermissionDenied"));
+				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
 			
 			if (args == null || args.length != 1)
 			{
-				sender.sendMessage(ChatColor.RED + configlanguage.getString("ErrSpecifyLanguage"));
+				sender.sendMessage(ChatColor.RED + getLangConfig("ErrSpecifyLanguage"));
 				return true;
 			}
 			
@@ -210,21 +215,57 @@ public class PlayerStatus extends JavaPlugin {
 		{
 			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.moderate"))
 			{
-				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + configlanguage.getString("MsgPermissionDenied"));
+				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
 			
 			if (isModerated)
 			{
 				isModerated = false;
-				Broadcast(ChatColor.RED + configlanguage.getString("MsgModerationOff"));
+				Broadcast(ChatColor.RED + getLangConfig("MsgModerationOff"));
 			}else{
 				isModerated = true;
-				Broadcast(ChatColor.RED + configlanguage.getString("MsgModerationOn1"));
-				if(configlanguage.getString("MsgModerationOn2") != "")
-					Broadcast(ChatColor.RED + configlanguage.getString("MsgModerationOn2"));
+				Broadcast(ChatColor.RED + getLangConfig("MsgModerationOn1"));
+				if(getLangConfig("MsgModerationOn2") != "")
+					Broadcast(ChatColor.RED + getLangConfig("MsgModerationOn2"));
 			}
 			
+			return true;
+		}else if (commandlabel.equalsIgnoreCase("loginquote") && args.length == 0)
+		{
+			sender.sendMessage("Usage /loginquote <number>");
+			return true;
+		}else if (commandlabel.equalsIgnoreCase("loginquote") && args.length == 1)
+		{
+			try  
+		    { 
+				int line = Integer.parseInt(args[0]);
+				if (sender instanceof Player)
+					sender.sendMessage(addColor(loginquote.get(line).replace("%player%", ((Player) sender).getDisplayName())));
+				else
+					sender.sendMessage(loginquote.get(line));
+		    }catch(NumberFormatException nfe)
+		    {
+		    	sender.sendMessage("Usage /loginquote <number>");
+		    }
+			return true;
+		}else if (commandlabel.equalsIgnoreCase("quitquote") && args.length == 0)
+		{
+			sender.sendMessage("Usage /quitquote <number>");
+			return true;
+		}else if (commandlabel.equalsIgnoreCase("quitquote") && args.length == 1)
+		{
+			try  
+		    { 
+				int line = Integer.parseInt(args[0]);
+				if (sender instanceof Player)
+					sender.sendMessage(addColor(loginquote.get(line).replace("%player%", ((Player) sender).getDisplayName())));
+				else
+					sender.sendMessage(loginquote.get(line));
+		    }catch(NumberFormatException nfe)
+		    {
+		    	sender.sendMessage("Usage /quitquote <number>");
+		    }
 			return true;
 		}else{
 			return false;
@@ -244,13 +285,13 @@ public class PlayerStatus extends JavaPlugin {
 			players = this.getServer().matchPlayer(playername);
 			if (players.size() > 1)
 			{
-				sender.sendMessage(ChatColor.RED + configlanguage.getString("MsgTooManyPlayerFound"));
+				sender.sendMessage(ChatColor.RED + getLangConfig("MsgTooManyPlayerFound"));
 				return null;
 			}
 			player = players.get(0);
 		}
 		if (player == null)
-			sender.sendMessage(ChatColor.RED + configlanguage.getString("MsgPlayerNotFound").replace("%player%", playername));
+			sender.sendMessage(ChatColor.RED + getLangConfig("MsgPlayerNotFound").replace("%player%", playername));
 		return player;
 	}
 	
@@ -266,7 +307,7 @@ public class PlayerStatus extends JavaPlugin {
 			if (ignorelist.length() > 2)
 				ignorelist = ignorelist.substring(0, ignorelist.length() - ", ".length());
 		}
-		player.player.sendMessage(configlanguage.getString("MsgCurrentlyIgnored") + " " + ignorelist);
+		player.player.sendMessage(getLangConfig("MsgCurrentlyIgnored") + " " + ignorelist);
 	}
 
 	private void setupPermissions() {
@@ -324,19 +365,19 @@ public class PlayerStatus extends JavaPlugin {
 	private String ColoredStatus(boolean value)
 	{
 		if (value)
-			return ChatColor.GREEN + configlanguage.getString("MsgEnabled");
+			return ChatColor.GREEN + getLangConfig("MsgEnabled");
 		else
-			return ChatColor.RED + configlanguage.getString("MsgDisabled");
+			return ChatColor.RED + getLangConfig("MsgDisabled");
 	}
 	
 	public void toggleNomsg(ExPlayer player) {
 		if (isPlayerNoMsg(player))
 		{
 			player.isNomsg = false;
-			player.player.sendMessage(configlanguage.getString("MsgNoMsgFalse"));
+			player.player.sendMessage(getLangConfig("MsgNoMsgFalse"));
 		}else{
 			player.isNomsg = true;
-			player.player.sendMessage(configlanguage.getString("MsgNoMsgTrue"));
+			player.player.sendMessage(getLangConfig("MsgNoMsgTrue"));
 		}
 	}
 
@@ -344,10 +385,10 @@ public class PlayerStatus extends JavaPlugin {
 		if (isPlayerNoChat(player))
 		{
 			player.isNochat = false;
-			player.player.sendMessage(configlanguage.getString("MsgNoChatFalse"));
+			player.player.sendMessage(getLangConfig("MsgNoChatFalse"));
 		}else{
 			player.isNochat = true;
-			player.player.sendMessage(configlanguage.getString("MsgNoChatTrue"));
+			player.player.sendMessage(getLangConfig("MsgNoChatTrue"));
 		}
 	}
 
@@ -359,9 +400,9 @@ public class PlayerStatus extends JavaPlugin {
 			{
 				player.isDnd = false;
 				player.timeUnset = t;
-				Broadcast(ChatColor.YELLOW + configlanguage.getString("MsgNotDnd").replace("%player%", player.player.getDisplayName()));
+				Broadcast(ChatColor.YELLOW + getLangConfig("MsgNotDnd").replace("%player%", player.player.getDisplayName()));
 			}else{
-				player.player.sendMessage(ChatColor.RED + configlanguage.getString("ErrDisableDND").replace("%t%", "" + ((player.timeDnded + configmain.getInt("TimeDisableAFKDND",5000) - t) / 1000 + 1)));
+				player.player.sendMessage(ChatColor.RED + getLangConfig("ErrDisableDND").replace("%t%", "" + ((player.timeDnded + configmain.getInt("TimeDisableAFKDND",5000) - t) / 1000 + 1)));
 			}	
 		}else
 		{
@@ -369,9 +410,9 @@ public class PlayerStatus extends JavaPlugin {
 			{
 				player.isDnd = true;
 				player.timeDnded = t;
-				Broadcast(ChatColor.YELLOW + configlanguage.getString("MsgDnd").replace("%player%", player.player.getDisplayName()));
+				Broadcast(ChatColor.YELLOW + getLangConfig("MsgDnd").replace("%player%", player.player.getDisplayName()));
 			}else{
-				player.player.sendMessage(ChatColor.RED + configlanguage.getString("ErrEnableDND").replace("%t%", "" + ((player.timeUnset + configmain.getInt("TimeBetweenAFKDND",5000) - t) / 1000 + 1)));
+				player.player.sendMessage(ChatColor.RED + getLangConfig("ErrEnableDND").replace("%t%", "" + ((player.timeUnset + configmain.getInt("TimeBetweenAFKDND",5000) - t) / 1000 + 1)));
 			}
 		}
 	}
@@ -385,16 +426,16 @@ public class PlayerStatus extends JavaPlugin {
 		{
 			player.isAfk = false;
 			player.timeUnset = t;
-			Broadcast(ChatColor.YELLOW + configlanguage.getString("MsgNotAfk").replace("%player%", player.player.getDisplayName()));
+			Broadcast(ChatColor.YELLOW + getLangConfig("MsgNotAfk").replace("%player%", player.player.getDisplayName()));
 		}else
 		{
 			if(player.timeUnset < (t - configmain.getInt("TimeBetweenAFKDND",30000)))
 			{
 				player.isAfk = true;
 				player.timeAfked = t;
-				Broadcast(ChatColor.YELLOW + configlanguage.getString("MsgAfk").replace("%player%", player.player.getDisplayName()));
+				Broadcast(ChatColor.YELLOW + getLangConfig("MsgAfk").replace("%player%", player.player.getDisplayName()));
 			}else{
-				player.player.sendMessage(ChatColor.RED + configlanguage.getString("ErrEnableAFK").replace("%t%", "" + ((player.timeUnset + configmain.getInt("TimeBetweenAFKDND",30000) - t) / 1000 + 1)));
+				player.player.sendMessage(ChatColor.RED + getLangConfig("ErrEnableAFK").replace("%t%", "" + ((player.timeUnset + configmain.getInt("TimeBetweenAFKDND",30000) - t) / 1000 + 1)));
 			}
 		}
 	}
@@ -404,12 +445,12 @@ public class PlayerStatus extends JavaPlugin {
 		if (sender.IsIgnoring(player))
 		{
 			sender.removeIgnoring(player);
-			sender.player.sendMessage(ChatColor.YELLOW + configlanguage.getString("MsgNotPlayerIsIgnored").replace("%player%", player.getDisplayName()));
+			sender.player.sendMessage(ChatColor.YELLOW + getLangConfig("MsgNotPlayerIsIgnored").replace("%player%", player.getDisplayName()));
 		}
 		else
 		{
 			sender.addIgnoring(player);
-			sender.player.sendMessage(ChatColor.YELLOW + configlanguage.getString("MsgPlayerIsIgnored").replace("%player%", player.getDisplayName()));
+			sender.player.sendMessage(ChatColor.YELLOW + getLangConfig("MsgPlayerIsIgnored").replace("%player%", player.getDisplayName()));
 		}
 	}
 	
@@ -418,19 +459,19 @@ public class PlayerStatus extends JavaPlugin {
 		if (!player.isMuted && Mute)
 		{
 			player.isMuted = true;
-			Broadcast(ChatColor.YELLOW + configlanguage.getString("MsgSetPlayerMuted").replace("%player1%", player.player.getDisplayName()).replace("%player2%", sender.player.getDisplayName()));
+			Broadcast(ChatColor.YELLOW + getLangConfig("MsgSetPlayerMuted").replace("%player1%", player.player.getDisplayName()).replace("%player2%", sender.player.getDisplayName()));
 		}
 		else if(player.isMuted && !Mute)
 		{
 			player.isMuted = false;
-			Broadcast(ChatColor.YELLOW + configlanguage.getString("MsgSetPlayerUnmuted").replace("%player1%", player.player.getDisplayName()).replace("%player2%", sender.player.getDisplayName()));
+			Broadcast(ChatColor.YELLOW + getLangConfig("MsgSetPlayerUnmuted").replace("%player1%", player.player.getDisplayName()).replace("%player2%", sender.player.getDisplayName()));
 		}else{
 			if(Mute)
 			{
-				sender.player.sendMessage(configlanguage.getString("MsgPlayerAlreadyMuted").replace("%player%", player.player.getDisplayName()));
+				sender.player.sendMessage(getLangConfig("MsgPlayerAlreadyMuted").replace("%player%", player.player.getDisplayName()));
 			}else
 			{
-				sender.player.sendMessage(configlanguage.getString("MsgPlayerIsNotMuted").replace("%player%", player.player.getDisplayName()));
+				sender.player.sendMessage(getLangConfig("MsgPlayerIsNotMuted").replace("%player%", player.player.getDisplayName()));
 			}
 		}
 	}
@@ -521,6 +562,9 @@ public class PlayerStatus extends JavaPlugin {
 		//properties.put("AFKGod", "true");
 		properties.put("TimeBetweenAFKDND", "30000");
 		properties.put("TimeDisableDND", "5000");
+		properties.put("CustomLoginMessages", "true");
+		properties.put("CustomQuitMessages", "true");
+		
 		
 		CreateConfig(file, properties, "PlayerStatus configuration");
 		
@@ -541,55 +585,55 @@ public class PlayerStatus extends JavaPlugin {
 		
 		properties = new TreeMap<String, String>();
 		
-		properties.put("AFKPrefix", "[AFK]");
-		properties.put("DNDPrefix","[DND]");
-		properties.put("PlayerJoin","%player% joined the server.");
-		properties.put("PlayerQuit","%player% left the server.");
-		properties.put("MsgPermissionDenied","Permissions Denied");
-		properties.put("MsgHelpPlayerStatus","To display status of that player.");
-		properties.put("MsgHelpAfk","To toggle Away From Keyboard.");
-		properties.put("MsgHelpDnd","To toggle Do Not Disturb.");
-		properties.put("MsgHelpNomsg","To disable Private Messages.");
-		properties.put("MsgHelpNochat","To disable chat.");
-		properties.put("MsgHelpIgnore","To ignore someone.");
-		properties.put("MsgHelpIgnorelist","To list ignored people. The lists reset upon server restart.");
-		properties.put("MsgStatusOf","Status of");
-		properties.put("MsgTooManyPlayerFound","More than one player found! Use @<name> for exact matching.");
-		properties.put("MsgPlayerNotFound","Player %player% not found!");
-		properties.put("MsgCurrentlyIgnored","Currently ignored players :");
-		properties.put("MsgEnabled","Enabled");
-		properties.put("MsgDisabled","Disabled");
-		properties.put("MsgNoMsgFalse","You are now receiving messages.");
-		properties.put("MsgNoMsgTrue","You are no longer receiving messages.");
-		properties.put("MsgNoChatTrue","You are no longer seeing chat.");
-		properties.put("MsgNoChatFalse","You are now seeing chat.");
-		properties.put("MsgNotDnd","%player% is no longer DND.");
-		properties.put("MsgDnd","%player% is now DND.");
-		properties.put("MsgNotAfk","%player% is no longer AFK.");
-		properties.put("MsgAfk","%player% is now AFK.");
-		properties.put("MsgNotPlayerIsIgnored","%player% is no longer being ignored.");
-		properties.put("MsgPlayerIsIgnored","%player% is being ignored.");
-		properties.put("MsgSetPlayerMuted","%player1% was muted by %player2%.");
-		properties.put("MsgSetPlayerUnmuted","%player1% was unmuted by %player2%.");
-		properties.put("MsgPlayerAlreadyMuted","%player% is already muted. Use /unmute to unmute.");
-		properties.put("MsgPlayerIsNotMuted","%player% is not muted.");
-		properties.put("MsgPlayerMuted","You cannot talk you are muted.");
-		properties.put("MsgCantMsgSelf","Can't message yourself.");
-		properties.put("MsgPrivateTo","(To %player%):");
-		properties.put("MsgPlayerIsDND","Player %player% is DND and might not receive your message!");
-		properties.put("MsgPlayerIsAFK","Player %player% is AFK and might not receive your message!");
-		properties.put("MsgPlayerIsNoMsg","Player %player% is blocking all incoming messages!");
-		properties.put("MsgPrivateFrom","(From %player%):");
-		properties.put("MsgModerationOff","The Chat is no longer moderated !");
-		properties.put("MsgModerationOn1", "!!ATTENTION The Chat is now moderated!!");
-		properties.put("MsgModerationOn2", "Only allowed people can speak");
-		properties.put("MsgIgnoreSyntax", "Syntax : /ignore <playername>");
-		properties.put("ErrMsgFormat","Too few arguments. /msg <target> <message...>");
-		properties.put("ErrSpecifyLanguage", "Too few arguments. /playerstatuslang <language>");
-		properties.put("ErrDisableDND", "You cannot disable DND this soon. Please wait %t% seconds.");
-		properties.put("ErrEnableDND", "You cannot go DND this soon. Please wait %t% seconds.");
-		properties.put("ErrEnableAFK", "You cannot go AFK this soon. Please wait %t% seconds.");
-		properties.put("ErrNoReply", "Noone to reply to!");
+		//properties.put("AFKPrefix", "[AFK]");
+		properties.put("DNDPrefix","&f[DND]");
+		properties.put("PlayerJoin","&e%player% &ejoined the server.");
+		properties.put("PlayerQuit","&e%player% &eleft the server.");
+		properties.put("MsgPermissionDenied","&cPermissions Denied");
+		properties.put("MsgHelpPlayerStatus","&fTo display status of that player.");
+		properties.put("MsgHelpAfk","&fTo toggle Away From Keyboard.");
+		properties.put("MsgHelpDnd","&fTo toggle Do Not Disturb.");
+		properties.put("MsgHelpNomsg","&fTo disable Private Messages.");
+		properties.put("MsgHelpNochat","&fTo disable chat.");
+		properties.put("MsgHelpIgnore","&fTo ignore someone.");
+		properties.put("MsgHelpIgnorelist","&fTo list ignored people. The lists reset upon server restart.");
+		properties.put("MsgStatusOf","&9Status of");
+		properties.put("MsgTooManyPlayerFound","&cMore than one player found! Use @<name> for exact matching.");
+		properties.put("MsgPlayerNotFound","&cPlayer %player% not found!");
+		properties.put("MsgCurrentlyIgnored","&fCurrently ignored players :");
+		properties.put("MsgEnabled","&aEnabled");
+		properties.put("MsgDisabled","&cDisabled");
+		properties.put("MsgNoMsgFalse","&fYou are now receiving messages.");
+		properties.put("MsgNoMsgTrue","&fYou are no longer receiving messages.");
+		properties.put("MsgNoChatTrue","&fYou are no longer seeing chat.");
+		properties.put("MsgNoChatFalse","&fYou are now seeing chat.");
+		properties.put("MsgNotDnd","&e%player% &eis no longer DND.");
+		properties.put("MsgDnd","&e%player% &eis now DND.");
+		properties.put("MsgNotAfk","&e%player% &eis no longer AFK.");
+		properties.put("MsgAfk","&e%player% &eis now AFK.");
+		properties.put("MsgNotPlayerIsIgnored","&e%player% &eis no longer being ignored.");
+		properties.put("MsgPlayerIsIgnored","&e%player% &eis being ignored.");
+		properties.put("MsgSetPlayerMuted","&e%player1% &ewas muted by %player2%&e.");
+		properties.put("MsgSetPlayerUnmuted","&e%player1% &ewas unmuted by %player2%&e.");
+		properties.put("MsgPlayerAlreadyMuted","%player% &eis already muted. Use /unmute to unmute.");
+		properties.put("MsgPlayerIsNotMuted","%player% &eis not muted.");
+		properties.put("MsgPlayerMuted","&cYou cannot talk you are muted.");
+		properties.put("MsgCantMsgSelf","&cCan't message yourself.");
+		properties.put("MsgPrivateTo","&7(To %player%&7):&f");
+		properties.put("MsgPlayerIsDND","&ePlayer %player% &eis DND and might not receive your message!");
+		properties.put("MsgPlayerIsAFK","&ePlayer %player% &eis AFK and might not receive your message!");
+		properties.put("MsgPlayerIsNoMsg","&ePlayer %player% &eis blocking all incoming messages!");
+		properties.put("MsgPrivateFrom","&7(From %player%&7):&f");
+		properties.put("MsgModerationOff","&cThe Chat is no longer moderated !");
+		properties.put("MsgModerationOn1", "&c!!ATTENTION The Chat is now moderated!!");
+		properties.put("MsgModerationOn2", "&cOnly allowed people can speak");
+		properties.put("MsgIgnoreSyntax", "&cSyntax : /ignore <playername>");
+		properties.put("ErrMsgFormat","&cToo few arguments. /msg <target> <message...>");
+		properties.put("ErrSpecifyLanguage", "&cToo few arguments. /playerstatuslang <language>");
+		properties.put("ErrDisableDND", "&cYou cannot disable DND this soon. Please wait &f%t% &cseconds.");
+		properties.put("ErrEnableDND", "&cYou cannot go DND this soon. Please wait &f%t% &cseconds.");
+		properties.put("ErrEnableAFK", "&cYou cannot go AFK this soon. Please wait &f%t% &cseconds.");
+		properties.put("ErrNoReply", "&cNoone to reply to!");
 		
 		CreateConfig(filelang, properties, "PlayerStatus Caption configuration");
 		
@@ -610,8 +654,214 @@ public class PlayerStatus extends JavaPlugin {
 			logger.severe("[" + pdfdescription + "] Invalid configuration: " + e.getMessage());
 		}
 		
+		File filequit = new File(this.getDataFolder(), "quit-english.txt");
+		if(!filequit.exists())
+		{
+			CreateQuitFile(filequit);
+		}else if (configmain.getString("Language","english") == "english")
+		{
+			LoadQuote(filequit, quitquote);
+		}
+		
+		if (configmain.getString("Language","english") != "english")
+		{
+			filequit = new File(this.getDataFolder(), "quit-" + configmain.getString("Language","english") + ".txt");
+			if(!filequit.exists())
+			{
+				CreateQuitFile(filequit);
+			}else{
+				LoadQuote(filequit, quitquote);
+			}
+		}
+				
+		File filelogin = new File(this.getDataFolder(), "login-english.txt");
+		if(!filelogin.exists())
+		{
+			CreateLoginFile(filelogin);
+		}else if (configmain.getString("Language","english") == "english")
+		{
+			LoadQuote(filelogin, loginquote);
+		}
+		
+		if (configmain.getString("Language","english") != "english")
+		{
+			filelogin = new File(this.getDataFolder(), "login-" + configmain.getString("Language","english") + ".txt");
+			if(!filelogin.exists())
+			{
+				CreateLoginFile(filelogin);
+			}else{
+				LoadQuote(filelogin, loginquote);
+			}
+		}
+		
 	}
 	
+	private void LoadQuote(File file, ArrayList<String> quote) {
+		FileReader reader = null;
+		BufferedReader br = null;
+		
+		try{
+			reader = new FileReader(file);
+			br = new BufferedReader(reader);
+			
+			quote.clear();
+			
+			String line;
+		    while((line = br.readLine()) != null)
+		    	quote.add(line);
+		    br.close();
+		    reader.close();
+			
+		}catch (IOException e){
+			logger.severe("[" + pdfdescription + "] Unable to read quote config file!");
+			logger.severe(e.getMessage());
+		} finally {     
+			if (br != null) try{
+				br.close();
+			} catch (IOException e2) {}
+			if (reader != null) try {
+				reader.close();
+			} catch (IOException e2) {}
+		}
+	}
+
+	private void CreateQuitFile(File file) {
+		FileWriter writer = null;
+		
+		try{
+			File dir = new File(this.getDataFolder(), "");
+			dir.mkdirs();
+			
+			writer = new FileWriter(file);
+			
+			quitquote.clear();
+			
+			quitquote.add("&e%player% &ehit ALT+F4");
+			quitquote.add("&e%player% &etried to divide by 0");
+			quitquote.add("&e%player% &eleft, we can talk behind his back now");
+			quitquote.add("&e%player% &eprematurely departed");
+			quitquote.add("&e%player% &efell down a bottomless pit");
+			quitquote.add("&e%player% &ewarped to another dimension");
+			quitquote.add("&e%player% &ehad cake waiting");
+			quitquote.add("&e%player% &evanished in thin air");
+			quitquote.add("&e%player% &echose not to be");
+			quitquote.add("&e%player% &esays \"GG\"");
+			quitquote.add("&e%player% &edidn't survive the zergling rush");
+			quitquote.add("&e%player% &efound something better to do");
+			quitquote.add("&e%player% &estopped believing in the god of cubes");
+			quitquote.add("&e%player% &estumbled on a round block and couldn't compute");
+			quitquote.add("&e%player% &elost his happy thought");
+			quitquote.add("&eNo, %player%&e. I expect you to die");
+			quitquote.add("&eIf %player% &eis not back in five minutes… wait longer!");
+			quitquote.add("&eThere was an un expected error with %player%");
+			quitquote.add("&e%player% &ehas entered orbit");
+			quitquote.add("&e%player% &ewill be back after these messages");
+			quitquote.add("&e%player% &eis not always right");
+			quitquote.add("&eThe doctors say %player% &ehas a 50-50 chance of surviving, but there’s only a ten percent chance of that.");
+			quitquote.add("&eUnable to download %player%");
+			quitquote.add("&e%player% &esuccessfully unloaded");
+			quitquote.add("&e%player% &ecore dumped");
+			quitquote.add("&e%player% &ehas experienced a 404 error");
+			quitquote.add("&e%player% &ereceived the blue screen of death");
+			quitquote.add("&e%player% &ewas given item #0");
+			quitquote.add("&eHasta la vista, %player%");
+			quitquote.add("&e%player% &ehas been slimed");
+			quitquote.add("&e%player% &edanced with the Devil in the pale moonlight");
+			quitquote.add("&e%player% &ecan't handle the truth!");
+			quitquote.add("&eDon't %player%&e! I have the high ground!");
+			quitquote.add("&e%player% &ewill be back");
+			quitquote.add("&e%player%&e, please make sure you wash behind your ears after leaving");
+			quitquote.add("&e%player%&e. %player%&e. Come back!");
+						
+			for(String str: quitquote)
+			{
+				writer.write(str + "\n");
+			}
+			
+			writer.close();
+			
+		}catch (IOException e){
+			logger.severe("[" + pdfdescription + "] Unable to create quit config file!");
+			logger.severe(e.getMessage());
+		} finally {                      
+			if (writer != null) try {
+				writer.close();
+			} catch (IOException e2) {}
+		}
+	}
+	
+	private void CreateLoginFile(File file) {
+		FileWriter writer = null;
+		
+		try{
+			File dir = new File(this.getDataFolder(), "");
+			dir.mkdirs();
+			
+			writer = new FileWriter(file);
+			
+			loginquote.clear();
+			
+			loginquote.add("&eHide your wife, %player%&e just got on!");
+			loginquote.add("&eDid someone order a %player%&e?");
+			loginquote.add("&ePlease insert %player% &eto proceed");
+			loginquote.add("&eWarning, %player% &edetected");
+			loginquote.add("&e%player% &ehas arrived");
+			loginquote.add("&e%player%&e, you are the winning visitor!");
+			loginquote.add("&eNotch entered the server. Nope, just %player%&e!");
+			loginquote.add("&eI knew %player% &ewasn't gone forever!");
+			loginquote.add("&e%player% &eloves you all!");
+			loginquote.add("&e%player%&e, you have entered the door to the north. You are now by yourself, standing in a dark room. The pungent stench of mildew eminates from the wet dungeon walls.");
+			loginquote.add("&eI shall call %player% &esquishy and he shall be mine and he shall be my squishy.");
+			loginquote.add("&eOh no it's %player% &eagain");
+			loginquote.add("&eWe seem to have created a %player%");
+			loginquote.add("&e%player%&e! Why did it have to be %player%&e?");
+			loginquote.add("&eHi, %player%&e, kill anyone today?");
+			loginquote.add("&e%player% &eis bigger than you and higher up the food chain. Get in %player%&e's my belly.");
+			loginquote.add("&eSay hello to my little friend %player%");
+			loginquote.add("&eFirst rule of the server is... you don't talk about %player%");
+			loginquote.add("&eValium, prozac, and %player%&e. Breakfast of champions.");
+			loginquote.add("&e*ding* your %player% &eis ready");
+			loginquote.add("&eGood Morning, %player%!");
+			loginquote.add("&eHello, gorgeous %player%");
+			loginquote.add("&e%player%&e, I am your Father!");
+			loginquote.add("&e%player% &eknows Kung Fu.");
+			loginquote.add("&eAlways let the %player% &ewin");
+			loginquote.add("&e%player% &eis queen of the world!");
+			loginquote.add("&eBond. %player% &eBond.");
+			loginquote.add("&eYou're the disease, and %player% &eis the cure.");
+			loginquote.add("&eHere's %player%&e!");
+			loginquote.add("&e%player% &ehad me at 'Hello'");
+			loginquote.add("&eMay the Force be with %player%");
+			loginquote.add("&eA %player% &ea day keeps the zombies at bay");
+			loginquote.add("&eHere is your daily %player%");
+			loginquote.add("&eElementary, my dear %player%");
+			loginquote.add("&eYo, %player%&e!");
+			loginquote.add("&eRUN! it's %player%");
+			loginquote.add("&eOne, two, %player%&e's coming for you…");
+			loginquote.add("&e%player%&e, is that a sword in your pocket or are you just happy to see me?");
+			loginquote.add("&e%player%&e, you complete me");
+			loginquote.add("&e%player% &ewill always triumph over good because good is dumb");
+			loginquote.add("&e%player%&e... very powerful stuff");
+			loginquote.add("&eGood Morning, good morning... To %player%&e, and you and youuuuu");
+			loginquote.add("&eMy name is %player%&e. And, no, I'm not a licensed digger, but I have been touched by your blocks. And I'm pretty sure I've touched them.");
+			
+			for(String str: loginquote)
+			{
+				writer.write(str + "\n");
+			}
+			
+			writer.close();
+			
+		}catch (IOException e){
+			logger.severe("[" + pdfdescription + "] Unable to create login config file!");
+			logger.severe(e.getMessage());
+		} finally {                      
+			if (writer != null) try {
+				writer.close();
+			} catch (IOException e2) {}
+		}
+	}
+
 	private void LoadLanguage(String lang, CommandSender sender)
 	{
 		File file = new File(this.getDataFolder(), "caption-" + lang + ".yml");
@@ -705,4 +955,14 @@ public class PlayerStatus extends JavaPlugin {
 		}
 	}
 	
+	public String addColor(String string) {
+        return string.replaceAll("(&([a-f0-9]))", "\u00A7$2");
+    }
+	
+	public String getLangConfig(String s)
+	{
+		return addColor(configlanguage.getString(s));
+	}
+	
 }
+

@@ -1,6 +1,6 @@
 name: PlayerStatus
 main: com.worldcretornica.playerstatus.PlayerStatus
-version: 2.4
+version: 2.5
 description: >
              Allows players to change their status
 commands:
@@ -37,3 +37,9 @@ commands:
     moderate:
         description: Mutes everyone except admins
         usage: moderate
+    loginquote:
+        description: Reads a login quote
+        usage: loginquote #
+    quitquote:
+        description: Reads a quit quote
+        usage: quitequote #

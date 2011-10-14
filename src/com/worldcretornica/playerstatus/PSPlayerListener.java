@@ -1,6 +1,7 @@
 package com.worldcretornica.playerstatus;
 
 import java.util.List;
+import java.util.Random;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -49,14 +50,14 @@ public class PSPlayerListener extends PlayerListener {
 		
 		if (ep.isMuted || (plugin.isModerated && !plugin.checkPermissions(player, "PlayerStatus.moderate")))
 		{
-			ep.player.sendMessage(ChatColor.RED + plugin.configlanguage.getString("MsgPlayerMuted"));
+			ep.player.sendMessage(ChatColor.RED + plugin.getLangConfig("MsgPlayerMuted"));
 			event.setCancelled(true);
 			return;
 		}
 		
 		if (ep.isDnd)
 		{
-			event.setFormat(plugin.configlanguage.getString("DNDPrefix") + format + "");
+			event.setFormat(plugin.getLangConfig("DNDPrefix") + format + "");
 		}
 		if (ep.isAfk)
 		{
@@ -76,14 +77,38 @@ public class PSPlayerListener extends PlayerListener {
 		
 	@Override
 	public void onPlayerJoin(PlayerJoinEvent event) {
-		plugin.Broadcast(ChatColor.YELLOW + plugin.configlanguage.getString("PlayerJoin").replace("%player%", event.getPlayer().getName()));
+	
+		if(plugin.configmain.getString("CustomLoginMessages").equalsIgnoreCase("true"))
+		{
+			Random rand = new Random();
+			
+			int line = rand.nextInt(plugin.loginquote.size());
+			
+			plugin.Broadcast(ChatColor.YELLOW + plugin.addColor(plugin.loginquote.get(line).replace("%player%", event.getPlayer().getDisplayName())));
+			
+		}else{
+			
+			plugin.Broadcast(ChatColor.YELLOW + plugin.getLangConfig("PlayerJoin").replace("%player%", event.getPlayer().getName()));
+		}
+		
 		event.setJoinMessage(null);
 		super.onPlayerJoin(event);
 	}
 	
 	@Override
 	public void onPlayerQuit(PlayerQuitEvent event) {
-		plugin.Broadcast(ChatColor.YELLOW + plugin.configlanguage.getString("PlayerQuit").replace("%player%", event.getPlayer().getName()));
+		if(plugin.configmain.getString("CustomQuitMessages").equalsIgnoreCase("true"))
+		{
+			Random rand = new Random();
+			
+			int line = rand.nextInt(plugin.quitquote.size());
+			
+			plugin.Broadcast(ChatColor.YELLOW + plugin.addColor(plugin.quitquote.get(line).replace("%player%", event.getPlayer().getDisplayName())));
+			
+		}else{
+			plugin.Broadcast(ChatColor.YELLOW + plugin.getLangConfig("PlayerQuit").replace("%player%", event.getPlayer().getName()));
+		}
+		
 		event.setQuitMessage(null);
 		super.onPlayerQuit(event);
 	}
@@ -100,7 +125,7 @@ public class PSPlayerListener extends PlayerListener {
 			ExPlayer pSource = plugin.getExPlayer(player);
 			if (pSource.isMuted || (plugin.isModerated && !plugin.checkPermissions(player, "PlayerStatus.moderate")))
 			{
-				pSource.player.sendMessage(ChatColor.RED + plugin.configlanguage.getString("MsgPlayerMuted"));
+				pSource.player.sendMessage(ChatColor.RED + plugin.getLangConfig("MsgPlayerMuted"));
 				event.setCancelled(true);
 				return;
 			}
@@ -124,7 +149,7 @@ public class PSPlayerListener extends PlayerListener {
 			
 			if (!message.contains(" "))
 			{
-				player.sendMessage(plugin.configlanguage.getString("ErrMsgFormat"));
+				player.sendMessage(plugin.getLangConfig("ErrMsgFormat"));
 				event.setCancelled(true);
 				return;
 			}else{
@@ -140,7 +165,7 @@ public class PSPlayerListener extends PlayerListener {
 				
 				if (ep.LastMessenger == null)
 				{
-					player.sendMessage(ChatColor.RED + plugin.configlanguage.getString("ErrNoReply"));
+					player.sendMessage(ChatColor.RED + plugin.getLangConfig("ErrNoReply"));
 					event.setCancelled(true);
 					return;
 				}
@@ -151,14 +176,14 @@ public class PSPlayerListener extends PlayerListener {
 			}else{
 				if (!message.contains(" "))
 				{
-					player.sendMessage(ChatColor.RED + plugin.configlanguage.getString("ErrMsgFormat"));
+					player.sendMessage(ChatColor.RED + plugin.getLangConfig("ErrMsgFormat"));
 					event.setCancelled(true);
 					return;
 				}else{
 					name = message.substring(0, message.indexOf(" "));
 					if (!message.contains(" "))
 					{
-						player.sendMessage(ChatColor.RED + plugin.configlanguage.getString("ErrMsgFormat"));
+						player.sendMessage(ChatColor.RED + plugin.getLangConfig("ErrMsgFormat"));
 						event.setCancelled(true);
 						return;
 					}else{
@@ -179,12 +204,12 @@ public class PSPlayerListener extends PlayerListener {
 
 				if (recipients.size() > 1)
 				{
-					player.sendMessage(ChatColor.RED + plugin.configlanguage.getString("MsgTooManyPlayerFound"));
+					player.sendMessage(ChatColor.RED + plugin.getLangConfig("MsgTooManyPlayerFound"));
 					event.setCancelled(true);
 					return;
 				}else if(recipients.size() == 0)
 				{
-					player.sendMessage(ChatColor.RED + plugin.configlanguage.getString("MsgPlayerNotFound").replace("%player%", name));
+					player.sendMessage(ChatColor.RED + plugin.getLangConfig("MsgPlayerNotFound").replace("%player%", name));
 					event.setCancelled(true);
 					return;
 				}
@@ -194,7 +219,7 @@ public class PSPlayerListener extends PlayerListener {
 			
 			if (player.getName().equals(recipient.getName()))
 			{
-				player.sendMessage(ChatColor.RED + plugin.configlanguage.getString("MsgCantMsgSelf"));
+				player.sendMessage(ChatColor.RED + plugin.getLangConfig("MsgCantMsgSelf"));
 			}else{
 
 				int i = plugin.playerlist.indexOf(plugin.getExPlayer(recipient));
@@ -205,28 +230,28 @@ public class PSPlayerListener extends PlayerListener {
 					
 					if (p.isDnd)
 					{
-						player.sendMessage(ChatColor.GRAY + plugin.configlanguage.getString("MsgPrivateTo").replace("%player%", recipient.getName()) + " " + ChatColor.WHITE + msg);
-						player.sendMessage(ChatColor.RED + plugin.configlanguage.getString("MsgPlayerIsDND").replace("%player%", recipient.getName()));
+						player.sendMessage(ChatColor.GRAY + plugin.getLangConfig("MsgPrivateTo").replace("%player%", recipient.getName()) + " " + msg);
+						player.sendMessage(ChatColor.RED + plugin.getLangConfig("MsgPlayerIsDND").replace("%player%", recipient.getName()));
 					}else if (p.isAfk)
 					{
-						player.sendMessage(ChatColor.GRAY + plugin.configlanguage.getString("MsgPrivateTo").replace("%player%", recipient.getName()) + " " + ChatColor.WHITE + msg);
-						player.sendMessage(ChatColor.RED + plugin.configlanguage.getString("MsgPlayerIsAFK").replace("%player%", recipient.getName()));
+						player.sendMessage(ChatColor.GRAY + plugin.getLangConfig("MsgPrivateTo").replace("%player%", recipient.getName()) + " " + msg);
+						player.sendMessage(ChatColor.RED + plugin.getLangConfig("MsgPlayerIsAFK").replace("%player%", recipient.getName()));
 					}else if (p.isNomsg)
 					{
-						player.sendMessage(ChatColor.GRAY + plugin.configlanguage.getString("MsgPrivateTo").replace("%player%", recipient.getName()) + " " + ChatColor.WHITE + msg);
+						player.sendMessage(ChatColor.GRAY + plugin.getLangConfig("MsgPrivateTo").replace("%player%", recipient.getName()) + " " + msg);
 						if (!player.isOp())
 						{
-							player.sendMessage(ChatColor.RED + plugin.configlanguage.getString("MsgPlayerIsNoMsg").replace("%player%", recipient.getName()));
+							player.sendMessage(ChatColor.RED + plugin.getLangConfig("MsgPlayerIsNoMsg").replace("%player%", recipient.getName()));
 						}
 					}else{
-						player.sendMessage(ChatColor.GRAY + plugin.configlanguage.getString("MsgPrivateTo").replace("%player%", recipient.getName()) + " " + ChatColor.WHITE + msg);
+						player.sendMessage(ChatColor.GRAY + plugin.getLangConfig("MsgPrivateTo").replace("%player%", recipient.getName()) + " " + msg);
 					}
 					
 					if (!p.isNomsg || player.isOp())
 					{
 						if (!p.IsIgnoring(player))
 						{
-							recipient.sendMessage(ChatColor.GRAY + plugin.configlanguage.getString("MsgPrivateFrom").replace("%player%", player.getName()) + " " + ChatColor.WHITE + msg);
+							recipient.sendMessage(ChatColor.GRAY + plugin.getLangConfig("MsgPrivateFrom").replace("%player%", player.getName()) + " " + msg);
 							plugin.logger.info("[" + plugin.pdfdescription + "]" + player.getName() + " told " + recipient.getName() + ": " + msg);
 							
 							plugin.getExPlayer(recipient).LastMessenger = player;
@@ -239,8 +264,8 @@ public class PSPlayerListener extends PlayerListener {
 					}
 					
 				}else{
-					player.sendMessage(ChatColor.GRAY + plugin.configlanguage.getString("MsgPrivateTo").replace("%player%", recipient.getName()) + " " + ChatColor.WHITE + msg);
-					recipient.sendMessage(ChatColor.GRAY + plugin.configlanguage.getString("MsgPrivateFrom").replace("%player%", player.getName()) + " " + ChatColor.WHITE + msg);
+					player.sendMessage(ChatColor.GRAY + plugin.getLangConfig("MsgPrivateTo").replace("%player%", recipient.getName()) + " " + msg);
+					recipient.sendMessage(ChatColor.GRAY + plugin.getLangConfig("MsgPrivateFrom").replace("%player%", player.getName()) + " " + msg);
 					plugin.getExPlayer(recipient).LastMessenger = player;
 					plugin.logger.info("[" + plugin.pdfdescription + "]" + player.getName() + " told " + recipient.getName() + ": " + msg);
 				}
