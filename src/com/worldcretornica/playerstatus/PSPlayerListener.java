@@ -77,39 +77,44 @@ public class PSPlayerListener extends PlayerListener {
 		
 	@Override
 	public void onPlayerJoin(PlayerJoinEvent event) {
-	
-		if(plugin.configmain.getString("CustomLoginMessages").equalsIgnoreCase("true"))
+		if(plugin.configmain.getString("EnableLoginMessages").equalsIgnoreCase("true"))
 		{
-			Random rand = new Random();
+			if(plugin.configmain.getString("CustomLoginMessages").equalsIgnoreCase("true"))
+			{
+				Random rand = new Random();
+				
+				int line = rand.nextInt(plugin.loginquote.size());
+				
+				plugin.Broadcast(ChatColor.YELLOW + plugin.addColor(plugin.loginquote.get(line).replace("%player%", event.getPlayer().getDisplayName())));
+				
+			}else{
+				
+				plugin.Broadcast(ChatColor.YELLOW + plugin.getLangConfig("PlayerJoin").replace("%player%", event.getPlayer().getName()));
+			}
 			
-			int line = rand.nextInt(plugin.loginquote.size());
-			
-			plugin.Broadcast(ChatColor.YELLOW + plugin.addColor(plugin.loginquote.get(line).replace("%player%", event.getPlayer().getDisplayName())));
-			
-		}else{
-			
-			plugin.Broadcast(ChatColor.YELLOW + plugin.getLangConfig("PlayerJoin").replace("%player%", event.getPlayer().getName()));
+			event.setJoinMessage(null);
 		}
-		
-		event.setJoinMessage(null);
 		super.onPlayerJoin(event);
 	}
 	
 	@Override
 	public void onPlayerQuit(PlayerQuitEvent event) {
-		if(plugin.configmain.getString("CustomQuitMessages").equalsIgnoreCase("true"))
+		if(plugin.configmain.getString("EnableQuitMessages").equalsIgnoreCase("true"))
 		{
-			Random rand = new Random();
+			if(plugin.configmain.getString("CustomQuitMessages").equalsIgnoreCase("true"))
+			{
+				Random rand = new Random();
+				
+				int line = rand.nextInt(plugin.quitquote.size());
+				
+				plugin.Broadcast(ChatColor.YELLOW + plugin.addColor(plugin.quitquote.get(line).replace("%player%", event.getPlayer().getDisplayName())));
+				
+			}else{
+				plugin.Broadcast(ChatColor.YELLOW + plugin.getLangConfig("PlayerQuit").replace("%player%", event.getPlayer().getName()));
+			}
 			
-			int line = rand.nextInt(plugin.quitquote.size());
-			
-			plugin.Broadcast(ChatColor.YELLOW + plugin.addColor(plugin.quitquote.get(line).replace("%player%", event.getPlayer().getDisplayName())));
-			
-		}else{
-			plugin.Broadcast(ChatColor.YELLOW + plugin.getLangConfig("PlayerQuit").replace("%player%", event.getPlayer().getName()));
+			event.setQuitMessage(null);
 		}
-		
-		event.setQuitMessage(null);
 		super.onPlayerQuit(event);
 	}
 	

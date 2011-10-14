@@ -564,6 +564,8 @@ public class PlayerStatus extends JavaPlugin {
 		properties.put("TimeDisableDND", "5000");
 		properties.put("CustomLoginMessages", "true");
 		properties.put("CustomQuitMessages", "true");
+		properties.put("EnableLoginMessages", "true");
+		properties.put("EnableQuitMessages", "true");
 		
 		
 		CreateConfig(file, properties, "PlayerStatus configuration");
