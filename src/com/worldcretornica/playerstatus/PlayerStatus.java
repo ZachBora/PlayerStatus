@@ -27,6 +27,9 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import ru.tehkode.permissions.PermissionManager;
+import ru.tehkode.permissions.bukkit.PermissionsEx;
+
 import com.nijiko.permissions.PermissionHandler;
 import com.nijikokun.bukkit.Permissions.Permissions;
 
@@ -48,9 +51,12 @@ public class PlayerStatus extends JavaPlugin {
 	 
 	// Permissions
     public PermissionHandler permissions;
+    public PermissionManager permpex;
     boolean permissions3;
     
-    public boolean isModerated = false; 
+    public boolean isModerated = false;
+    
+    public Plugin censorit = null;
 	
 	@Override
 	public void onDisable() {
@@ -75,6 +81,11 @@ public class PlayerStatus extends JavaPlugin {
 		
 		setupPermissions();
 		checkConfig();
+		
+		if(this.getServer().getPluginManager().isPluginEnabled("CensorIt"))
+		{
+			censorit = this.getServer().getPluginManager().getPlugin("CensorIt");
+		}
 		
 		this.logger.info(pdfdescription + " version " + pdfversion + " is enabled!");
 	}
@@ -311,13 +322,22 @@ public class PlayerStatus extends JavaPlugin {
 	}
 
 	private void setupPermissions() {
-        if(permissions != null)
+		if(permissions != null)
             return;
         
         Plugin permTest = this.getServer().getPluginManager().getPlugin("Permissions");
+        Plugin pexTest = this.getServer().getPluginManager().getPlugin("PermissionsEx");
         
         // Check to see if Permissions exists
-        if (permTest == null) {
+        if (pexTest != null)
+    	{
+    		// We're using Permissions
+    		permpex = PermissionsEx.getPermissionManager();
+        	// Check for Permissions 3
+        	permissions3 = false;
+        	logger.info("[" + pdfdescription + "] PermissionsEx " + pexTest.getDescription().getVersion() + " found");
+        	return;
+    	}else if (permTest == null) {
         	logger.info("[" + pdfdescription + "] Permissions not found, using SuperPerms");
         	return;
         }
@@ -327,7 +347,7 @@ public class PlayerStatus extends JavaPlugin {
     		return;
     	}
     	
-    	// We're using Permissions
+		// We're using Permissions
     	permissions = ((Permissions) permTest).getHandler();
     	// Check for Permissions 3
     	permissions3 = permTest.getDescription().getVersion().startsWith("3");
@@ -517,12 +537,16 @@ public class PlayerStatus extends JavaPlugin {
 	}
 	
 	public Boolean checkPermissions(Player player, String node) {
-    	// Permissions
+		// Permissions
         if (this.permissions != null) {
             if (this.permissions.has(player, node))
                 return true;
+        // Pex
+        } else if(this.permpex != null) {
+        	if (this.permpex.has(player, node))
+        		return true;
         // SuperPerms
-        } else if (player.hasPermission(node)) {
+        } else if (player.hasPermission(node) || player.hasPermission(pdfdescription + ".*") || player.hasPermission("*")) {
               return true;
         } else if (player.isOp()) {
             return true;

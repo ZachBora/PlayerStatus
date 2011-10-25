@@ -1,6 +1,6 @@
 name: PlayerStatus
 main: com.worldcretornica.playerstatus.PlayerStatus
-version: 2.5
+version: 2.6
 description: >
              Allows players to change their status
 commands:
