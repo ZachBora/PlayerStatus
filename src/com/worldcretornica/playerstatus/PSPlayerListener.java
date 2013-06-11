@@ -3,15 +3,20 @@ package com.worldcretornica.playerstatus;
 import java.util.List;
 import java.util.Random;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerChatEvent;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerListener;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-public class PSPlayerListener extends PlayerListener {
+public class PSPlayerListener implements Listener
+{
+	
 	public static PlayerStatus plugin;
 	
 	public PSPlayerListener(PlayerStatus instance)
@@ -19,23 +24,8 @@ public class PSPlayerListener extends PlayerListener {
 		plugin = instance;
 	}
 	
-	
-	/* Commented until find how to prevent players from pushing others 
-	@Override
-	public void onPlayerMove(PlayerMoveEvent event) {
-		
-		ExPlayer ep = plugin.getExPlayer(event.getPlayer());
-
-		if (ep.isAfk)
-		{
-			plugin.toggleAfk(ep);
-		}
-		
-		super.onPlayerMove(event);
-	}*/
-	
-	@Override
-	public void onPlayerChat(PlayerChatEvent event) {
+	@EventHandler(priority = EventPriority.HIGHEST)
+	public void onPlayerChat(final AsyncPlayerChatEvent event) {
 		if (event.isCancelled()) return;
 				
 		String message = event.getMessage();
@@ -45,12 +35,15 @@ public class PSPlayerListener extends PlayerListener {
 		Player player = event.getPlayer();
 		
 		String format = event.getFormat();
-
-		ExPlayer ep = plugin.getExPlayer(player);
 		
+		ExPlayer ep = PlayerStatus.playerlist.get(player.getName());
+		
+		if(ep == null)
+			ep = new ExPlayer();
+				
 		if (ep.isMuted || (plugin.isModerated && !plugin.checkPermissions(player, "PlayerStatus.moderate")))
 		{
-			ep.player.sendMessage(ChatColor.RED + plugin.getLangConfig("MsgPlayerMuted"));
+			player.sendMessage(ChatColor.RED + plugin.getLangConfig("MsgPlayerMuted"));
 			event.setCancelled(true);
 			return;
 		}
@@ -61,22 +54,23 @@ public class PSPlayerListener extends PlayerListener {
 		}
 		if (ep.isAfk)
 		{
-			plugin.toggleAfk(ep);
+			plugin.toggleAfk(player, ep);
 		}
 		
 		for(int r = 0; r < recipients.length; r++)
-		{
-			ep = plugin.getExPlayer(recipients[r]);
+		{			
+			ep = PlayerStatus.playerlist.get(recipients[r].getName());
 			
-			if (ep.isNochat || ep.IsIgnoring(player))
+			if (ep != null && (ep.isNochat || ep.IsIgnoring(player.getName())))
 			{
-				event.getRecipients().remove(ep.player);
+				event.getRecipients().remove(recipients[r]);
 			}
 		}
 	}
 		
-	@Override
-	public void onPlayerJoin(PlayerJoinEvent event) {
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+	public void onPlayerJoin(final PlayerJoinEvent event) 
+	{
 		if(plugin.configmain.getString("EnableLoginMessages").equalsIgnoreCase("true"))
 		{
 			if(plugin.configmain.getString("CustomLoginMessages").equalsIgnoreCase("true"))
@@ -85,19 +79,26 @@ public class PSPlayerListener extends PlayerListener {
 				
 				int line = rand.nextInt(plugin.loginquote.size());
 				
-				plugin.Broadcast(ChatColor.YELLOW + plugin.addColor(plugin.loginquote.get(line).replace("%player%", event.getPlayer().getDisplayName())));
-				
-			}else{
-				
-				plugin.Broadcast(ChatColor.YELLOW + plugin.getLangConfig("PlayerJoin").replace("%player%", event.getPlayer().getName()));
+				for(Player p : Bukkit.getServer().getOnlinePlayers())
+				{
+					if(p.canSee(event.getPlayer()))
+						p.sendMessage(ChatColor.YELLOW + plugin.addColor(plugin.loginquote.get(line).replace("%player%", event.getPlayer().getDisplayName())));
+				}
+			}
+			else
+			{
+				for(Player p : Bukkit.getServer().getOnlinePlayers())
+				{
+					if(p.canSee(event.getPlayer()))
+						p.sendMessage(ChatColor.YELLOW + plugin.getLangConfig("PlayerJoin").replace("%player%", event.getPlayer().getName()));
+				}
 			}
 			
 			event.setJoinMessage(null);
 		}
-		super.onPlayerJoin(event);
 	}
 	
-	@Override
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void onPlayerQuit(PlayerQuitEvent event) {
 		if(plugin.configmain.getString("EnableQuitMessages").equalsIgnoreCase("true"))
 		{
@@ -107,19 +108,28 @@ public class PSPlayerListener extends PlayerListener {
 				
 				int line = rand.nextInt(plugin.quitquote.size());
 				
-				plugin.Broadcast(ChatColor.YELLOW + plugin.addColor(plugin.quitquote.get(line).replace("%player%", event.getPlayer().getDisplayName())));
+				for(Player p : Bukkit.getServer().getOnlinePlayers())
+				{
+					if(p.canSee(event.getPlayer()))
+						p.sendMessage(ChatColor.YELLOW + plugin.addColor(plugin.quitquote.get(line).replace("%player%", event.getPlayer().getDisplayName())));
+				}
 				
-			}else{
-				plugin.Broadcast(ChatColor.YELLOW + plugin.getLangConfig("PlayerQuit").replace("%player%", event.getPlayer().getName()));
+			}
+			else
+			{
+				for(Player p : Bukkit.getServer().getOnlinePlayers())
+				{
+					if(p.canSee(event.getPlayer()))
+						p.sendMessage(ChatColor.YELLOW + plugin.getLangConfig("PlayerQuit").replace("%player%", event.getPlayer().getName()));
+				}
 			}
 			
 			event.setQuitMessage(null);
 		}
-		super.onPlayerQuit(event);
 	}
 	
-	@Override
-	public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
+	@EventHandler(priority = EventPriority.LOW)
+	public void onPlayerCommandPreprocess(final PlayerCommandPreprocessEvent event) {
 		if (event.isCancelled()) return;
 		
 		String message = event.getMessage();
@@ -130,7 +140,7 @@ public class PSPlayerListener extends PlayerListener {
 			ExPlayer pSource = plugin.getExPlayer(player);
 			if (pSource.isMuted || (plugin.isModerated && !plugin.checkPermissions(player, "PlayerStatus.moderate")))
 			{
-				pSource.player.sendMessage(ChatColor.RED + plugin.getLangConfig("MsgPlayerMuted"));
+				player.sendMessage(ChatColor.RED + plugin.getLangConfig("MsgPlayerMuted"));
 				event.setCancelled(true);
 				return;
 			}
@@ -140,7 +150,7 @@ public class PSPlayerListener extends PlayerListener {
 			for (Player t : plugin.getServer().getOnlinePlayers())
 			{
 				ExPlayer p = plugin.getExPlayer(t);
-				if (!p.isNochat && !p.IsIgnoring(player))
+				if (!p.isNochat && !p.IsIgnoring(player.getName()))
 				{
 					t.sendMessage("* " + player.getName() + " " + s);
 				}
@@ -226,12 +236,10 @@ public class PSPlayerListener extends PlayerListener {
 			{
 				player.sendMessage(ChatColor.RED + plugin.getLangConfig("MsgCantMsgSelf"));
 			}else{
-
-				int i = plugin.playerlist.indexOf(plugin.getExPlayer(recipient));
 								
-				if (i != -1)
+				if (PlayerStatus.playerlist.containsKey(recipient.getName()))
 				{
-					ExPlayer p = plugin.playerlist.get(i);
+					ExPlayer p = PlayerStatus.playerlist.get(recipient.getName());
 					
 					if (p.isDnd)
 					{
@@ -254,7 +262,7 @@ public class PSPlayerListener extends PlayerListener {
 					
 					if (!p.isNomsg || player.isOp())
 					{
-						if (!p.IsIgnoring(player))
+						if (!p.IsIgnoring(player.getName()))
 						{
 							recipient.sendMessage(ChatColor.GRAY + plugin.getLangConfig("MsgPrivateFrom").replace("%player%", player.getName()) + " " + msg);
 							plugin.logger.info("[" + plugin.pdfdescription + "]" + player.getName() + " told " + recipient.getName() + ": " + msg);

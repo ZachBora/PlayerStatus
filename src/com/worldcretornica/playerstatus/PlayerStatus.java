@@ -12,6 +12,7 @@ import java.util.Calendar;
 import java.util.Map.Entry;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 
@@ -21,24 +22,17 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import ru.tehkode.permissions.PermissionManager;
-import ru.tehkode.permissions.bukkit.PermissionsEx;
-
-import com.nijiko.permissions.PermissionHandler;
-import com.nijikokun.bukkit.Permissions.Permissions;
 
 public class PlayerStatus extends JavaPlugin {
 
 	public final PSPlayerListener chatlistener = new PSPlayerListener(this);
 	public final PSEntityListener deathlistener = new PSEntityListener(this);
 	public final Logger logger = Logger.getLogger("Minecraft");
-	public final ArrayList<ExPlayer> playerlist = new ArrayList<ExPlayer>();
+	public static final ConcurrentHashMap<String,ExPlayer> playerlist = new ConcurrentHashMap<String, ExPlayer>();
 	
 	public YamlConfiguration configlanguage;
 	public YamlConfiguration configmain;
@@ -48,38 +42,29 @@ public class PlayerStatus extends JavaPlugin {
 	
 	public String pdfdescription;
 	private String pdfversion;
-	 
-	// Permissions
-    public PermissionHandler permissions;
-    public PermissionManager permpex;
-    boolean permissions3;
-    
+	     
     public boolean isModerated = false;
     
     public Plugin censorit = null;
 	
 	@Override
-	public void onDisable() {
+	public void onDisable()
+	{
 		playerlist.clear();
 		this.logger.info(pdfdescription + " disabled.");
 	}
 
 	@Override
-	public void onEnable() {
+	public void onEnable()
+	{
 		PluginManager pm = getServer().getPluginManager();
-		pm.registerEvent(Event.Type.PLAYER_CHAT, this.chatlistener, Event.Priority.Highest, this);
-		//pm.registerEvent(Event.Type.PLAYER_MOVE, this.chatlistener, Event.Priority.Normal, this);
-		pm.registerEvent(Event.Type.PLAYER_COMMAND_PREPROCESS, this.chatlistener, Event.Priority.Low, this);
-		pm.registerEvent(Event.Type.PLAYER_JOIN, this.chatlistener, Event.Priority.Highest, this);
-		pm.registerEvent(Event.Type.PLAYER_QUIT, this.chatlistener, Event.Priority.Highest, this);
-		pm.registerEvent(Event.Type.ENTITY_DEATH, this.deathlistener, Event.Priority.Normal, this);
-		//pm.registerEvent(Event.Type.ENTITY_DAMAGE, this.deathlistener, Event.Priority.Normal, this);
+		pm.registerEvents(this.chatlistener, this);
+		pm.registerEvents(this.deathlistener, this);
 		
 		PluginDescriptionFile pdfFile = this.getDescription();
 		pdfdescription = pdfFile.getName();
 		pdfversion = pdfFile.getVersion();
-		
-		setupPermissions();
+
 		checkConfig();
 		
 		if(this.getServer().getPluginManager().isPluginEnabled("CensorIt"))
@@ -95,108 +80,137 @@ public class PlayerStatus extends JavaPlugin {
 	{
 		if (commandlabel.equalsIgnoreCase("afk"))
 		{
-			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.afk"))
-			{
+			if (!this.checkPermissions(sender, "PlayerStatus.afk"))
+			{				
 				sender.sendMessage(ChatColor.RED + "[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
-			toggleAfk(getExPlayer((Player) sender));
+			
+			if (sender instanceof Player)
+				toggleAfk((Player) sender, getExPlayer((Player) sender));
+			
 			return true;
 		}else if (commandlabel.equalsIgnoreCase("dnd")){
-			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.dnd"))
+			if (!this.checkPermissions(sender, "PlayerStatus.dnd"))
 			{
 				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
-			toggleDnd(getExPlayer((Player) sender));
+			if (sender instanceof Player)
+				toggleDnd((Player) sender, getExPlayer((Player) sender));
 			return true;
 		}else if (commandlabel.equalsIgnoreCase("nochat")){
-			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.nochat"))
+			if (!this.checkPermissions(sender, "PlayerStatus.nochat"))
 			{
 				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
-			toggleNochat(getExPlayer((Player) sender));
+			if (sender instanceof Player)
+				toggleNochat((Player) sender, getExPlayer((Player) sender));
 			return true;
 		}else if (commandlabel.equalsIgnoreCase("nomsg")){
-			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.nomessage"))
+			if (!this.checkPermissions(sender, "PlayerStatus.nomessage"))
 			{
 				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
-			toggleNomsg(getExPlayer((Player) sender));
+			if (sender instanceof Player)
+				toggleNomsg((Player) sender, getExPlayer((Player) sender));
 			return true;
 		}else if (commandlabel.equalsIgnoreCase("ignore") && args.length == 0){
-			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.ignore"))
+			if (!this.checkPermissions(sender, "PlayerStatus.ignore"))
 			{
 				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
-			sender.sendMessage(ChatColor.RED + getLangConfig("MsgIgnoreSyntax"));
+			if (sender instanceof Player)
+				sender.sendMessage(ChatColor.RED + getLangConfig("MsgIgnoreSyntax"));
 			return true;
 		}else if (commandlabel.equalsIgnoreCase("ignore") && args.length == 1){
-			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.ignore"))
+			if (!this.checkPermissions(sender, "PlayerStatus.ignore"))
 			{
 				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
-			
-			Player recipient = getPlayerFromString((Player) sender, args[0].toString());
-			
-			if (recipient != null)
+		
+			if (sender instanceof Player)
 			{
-				toggleIgnorePlayer(getExPlayer((Player) sender), recipient);
+				Player recipient = getPlayerFromString(sender, args[0].toString());
+				
+				if (recipient != null)
+				{
+					toggleIgnorePlayer((Player) sender, getExPlayer((Player) sender), recipient);
+				}
 			}
 			return true;
 		}else if (commandlabel.equalsIgnoreCase("ignorelist")){
-			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.ignore"))
+			if (!this.checkPermissions(sender, "PlayerStatus.ignore"))
 			{
 				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
-			displayIgnoreList(getExPlayer((Player) sender));
+			if (sender instanceof Player)
+				displayIgnoreList((Player) sender, getExPlayer((Player) sender));
 			return true;
 		}else if (commandlabel.equalsIgnoreCase("mute")){
-			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.mute"))
+			if (!this.checkPermissions(sender, "PlayerStatus.mute"))
 			{
 				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
 			
-			Player recipient = getPlayerFromString((Player) sender, args[0].toString());
+			Player recipient = getPlayerFromString(sender, args[0].toString());
 			
 			if (recipient != null)
 			{
-				toggleMutePlayer(getExPlayer((Player) sender), getExPlayer(recipient), true);
+				toggleMutePlayer(sender, getExPlayer((Player) recipient), recipient, true);
 			}
+			
 			return true;
 		}else if (commandlabel.equalsIgnoreCase("unmute")){
-			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.mute"))
+			if (!this.checkPermissions(sender, "PlayerStatus.mute"))
 			{
 				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
 			}
 			
-			Player recipient = getPlayerFromString((Player) sender, args[0].toString());
+			Player recipient = getPlayerFromString(sender, args[0].toString());
 			
 			if (recipient != null)
 			{
-				toggleMutePlayer(getExPlayer((Player) sender), getExPlayer(recipient), false);
+				toggleMutePlayer(sender, getExPlayer((Player) recipient), recipient, false);
 			}
 			return true;
+			
 		}else if (commandlabel.equalsIgnoreCase("playerstatus") && args.length == 0){
 			sender.sendMessage(ChatColor.BLUE + pdfdescription + " v" + pdfversion);
 			sender.sendMessage(ChatColor.RED + "/playerstatus " + ChatColor.GREEN + "<name> " + ChatColor.WHITE + getLangConfig("MsgHelpPlayerStatus"));
-			sender.sendMessage(ChatColor.RED + "/afk " + ChatColor.WHITE + getLangConfig("MsgHelpAfk") + " (" + ColoredStatus(isPlayerAfk(getExPlayer((Player) sender))) + ChatColor.WHITE + ")");
-			sender.sendMessage(ChatColor.RED + "/dnd " + ChatColor.WHITE + getLangConfig("MsgHelpDnd") + " (" + ColoredStatus(isPlayerDnd(getExPlayer((Player) sender))) + ChatColor.WHITE + ")");
-			sender.sendMessage(ChatColor.RED + "/nomsg " + ChatColor.WHITE + getLangConfig("MsgHelpNomsg") + " (" + ColoredStatus(isPlayerNoMsg(getExPlayer((Player) sender))) + ChatColor.WHITE + ")");
-			sender.sendMessage(ChatColor.RED + "/nochat " + ChatColor.WHITE + getLangConfig("MsgHelpNochat") + " (" + ColoredStatus(isPlayerNoChat(getExPlayer((Player) sender))) + ChatColor.WHITE + ")");
+			if (sender instanceof Player)
+			{
+				sender.sendMessage(ChatColor.RED + "/afk " + ChatColor.WHITE + getLangConfig("MsgHelpAfk") + " (" + ColoredStatus(isPlayerAfk(getExPlayer((Player) sender))) + ChatColor.WHITE + ")");
+				sender.sendMessage(ChatColor.RED + "/dnd " + ChatColor.WHITE + getLangConfig("MsgHelpDnd") + " (" + ColoredStatus(isPlayerDnd(getExPlayer((Player) sender))) + ChatColor.WHITE + ")");
+				sender.sendMessage(ChatColor.RED + "/nomsg " + ChatColor.WHITE + getLangConfig("MsgHelpNomsg") + " (" + ColoredStatus(isPlayerNoMsg(getExPlayer((Player) sender))) + ChatColor.WHITE + ")");
+				sender.sendMessage(ChatColor.RED + "/nochat " + ChatColor.WHITE + getLangConfig("MsgHelpNochat") + " (" + ColoredStatus(isPlayerNoChat(getExPlayer((Player) sender))) + ChatColor.WHITE + ")");
+			}
 			sender.sendMessage(ChatColor.RED + "/ignore <playername> " + ChatColor.WHITE + getLangConfig("MsgHelpIgnore"));
 			sender.sendMessage(ChatColor.RED + "/ignorelist " + ChatColor.WHITE + getLangConfig("MsgHelpIgnorelist"));
 			return true;
+		}else if (commandlabel.equalsIgnoreCase("playerstatus") && args != null && args.length > 0 && args[0].equalsIgnoreCase("reload")){
+			
+			if (!this.checkPermissions(sender, "PlayerStatus.reload"))
+			{
+				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
+				return true;
+			}
+			
+			checkConfig();
+			
+			sender.sendMessage("PlayerStatus reloaded");
+			return true;
+			
 		}else if (commandlabel.equalsIgnoreCase("playerstatus") && args != null && args.length == 1){
 			
-			Player recipient = getPlayerFromString((Player) sender, args[0].toString());
+			Player recipient = getPlayerFromString(sender, args[0].toString());
 			
 			if (recipient != null)
 			{
@@ -205,7 +219,7 @@ public class PlayerStatus extends JavaPlugin {
 			return true;
 		}else if (commandlabel.equalsIgnoreCase("playerstatuslang"))
 		{
-			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.config"))
+			if (!this.checkPermissions(sender, "PlayerStatus.config"))
 			{
 				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
@@ -224,7 +238,7 @@ public class PlayerStatus extends JavaPlugin {
 			return true;
 		}else if (commandlabel.equalsIgnoreCase("moderate"))
 		{
-			if (sender instanceof Player && !this.checkPermissions((Player) sender, "PlayerStatus.moderate"))
+			if (!this.checkPermissions(sender, "PlayerStatus.moderate"))
 			{
 				sender.sendMessage(ChatColor.RED +"[" + pdfdescription + "] " + getLangConfig("MsgPermissionDenied"));
 				return true;
@@ -284,7 +298,7 @@ public class PlayerStatus extends JavaPlugin {
 	}
 	
 	
-	private Player getPlayerFromString(Player sender, String playername)
+	private Player getPlayerFromString(CommandSender sender, String playername)
 	{
 		List<Player> players;
 		Player player;
@@ -299,6 +313,10 @@ public class PlayerStatus extends JavaPlugin {
 				sender.sendMessage(ChatColor.RED + getLangConfig("MsgTooManyPlayerFound"));
 				return null;
 			}
+			if (players.size() == 0)
+			{
+				return null;
+			}
 			player = players.get(0);
 		}
 		if (player == null)
@@ -306,53 +324,20 @@ public class PlayerStatus extends JavaPlugin {
 		return player;
 	}
 	
-	private void displayIgnoreList(ExPlayer player) {
+	private void displayIgnoreList(Player player, ExPlayer ep) {
 		String ignorelist = "";
 		
-		if (playerlist.contains(player))
+		if (playerlist.containsKey(player.getName()))
 		{
-			for(Player p : playerlist.get(playerlist.indexOf(player)).ignoredplayers)
+			for(String p : playerlist.get(player.getName()).ignoredplayers)
 			{
-				ignorelist = ignorelist + p.getName() + ", ";
+				ignorelist = ignorelist + p + ", ";
 			}
 			if (ignorelist.length() > 2)
 				ignorelist = ignorelist.substring(0, ignorelist.length() - ", ".length());
 		}
-		player.player.sendMessage(getLangConfig("MsgCurrentlyIgnored") + " " + ignorelist);
+		player.sendMessage(getLangConfig("MsgCurrentlyIgnored") + " " + ignorelist);
 	}
-
-	private void setupPermissions() {
-		if(permissions != null)
-            return;
-        
-        Plugin permTest = this.getServer().getPluginManager().getPlugin("Permissions");
-        Plugin pexTest = this.getServer().getPluginManager().getPlugin("PermissionsEx");
-        
-        // Check to see if Permissions exists
-        if (pexTest != null)
-    	{
-    		// We're using Permissions
-    		permpex = PermissionsEx.getPermissionManager();
-        	// Check for Permissions 3
-        	permissions3 = false;
-        	logger.info("[" + pdfdescription + "] PermissionsEx " + pexTest.getDescription().getVersion() + " found");
-        	return;
-    	}else if (permTest == null) {
-        	logger.info("[" + pdfdescription + "] Permissions not found, using SuperPerms");
-        	return;
-        }
-    	// Check if it's a bridge
-    	if (permTest.getDescription().getVersion().startsWith("2.7.7")) {
-    		logger.info("[" + pdfdescription + "] Found Permissions Bridge. Using SuperPerms");
-    		return;
-    	}
-    	
-		// We're using Permissions
-    	permissions = ((Permissions) permTest).getHandler();
-    	// Check for Permissions 3
-    	permissions3 = permTest.getDescription().getVersion().startsWith("3");
-    	logger.info("[" + pdfdescription + "] Permissions " + permTest.getDescription().getVersion() + " found");
-    }
 
 	private String getStatus(ExPlayer player) {
 		String msg = "";
@@ -370,16 +355,14 @@ public class PlayerStatus extends JavaPlugin {
 	
 	public ExPlayer getExPlayer(Player player)
 	{
-		for(ExPlayer ep : this.playerlist)
+		if(playerlist.containsKey(player.getName()))
+			return playerlist.get(player.getName());
+		else
 		{
-			if (ep.player.equals(player))
-				return ep;
+			ExPlayer e = new ExPlayer();
+			playerlist.putIfAbsent(player.getName(), e);
+			return e;
 		}
-		
-		ExPlayer e = new ExPlayer(player);
-		playerlist.add(e);
-			
-		return e;
 	}
 	
 	private String ColoredStatus(boolean value)
@@ -390,165 +373,142 @@ public class PlayerStatus extends JavaPlugin {
 			return ChatColor.RED + getLangConfig("MsgDisabled");
 	}
 	
-	public void toggleNomsg(ExPlayer player) {
-		if (isPlayerNoMsg(player))
+	public void toggleNomsg(Player player, ExPlayer ep) {
+		if (isPlayerNoMsg(ep))
 		{
-			player.isNomsg = false;
-			player.player.sendMessage(getLangConfig("MsgNoMsgFalse"));
+			ep.isNomsg = false;
+			player.sendMessage(getLangConfig("MsgNoMsgFalse"));
 		}else{
-			player.isNomsg = true;
-			player.player.sendMessage(getLangConfig("MsgNoMsgTrue"));
+			ep.isNomsg = true;
+			player.sendMessage(getLangConfig("MsgNoMsgTrue"));
 		}
 	}
 
-	public void toggleNochat(ExPlayer player) {
-		if (isPlayerNoChat(player))
+	public void toggleNochat(Player player, ExPlayer ep) {
+		if (isPlayerNoChat(ep))
 		{
-			player.isNochat = false;
-			player.player.sendMessage(getLangConfig("MsgNoChatFalse"));
+			ep.isNochat = false;
+			player.sendMessage(getLangConfig("MsgNoChatFalse"));
 		}else{
-			player.isNochat = true;
-			player.player.sendMessage(getLangConfig("MsgNoChatTrue"));
+			ep.isNochat = true;
+			player.sendMessage(getLangConfig("MsgNoChatTrue"));
 		}
 	}
 
-	public void toggleDnd(ExPlayer player) {
+	public void toggleDnd(Player player, ExPlayer ep) {
 		long t = Calendar.getInstance().getTimeInMillis();
-		if (isPlayerDnd(player))
+		if (isPlayerDnd(ep))
 		{
-			if(player.timeDnded < (t - configmain.getInt("TimeDisableAFKDND",5000)))
+			if(ep.timeDnded < (t - configmain.getInt("TimeDisableAFKDND",5000)))
 			{
-				player.isDnd = false;
-				player.timeUnset = t;
-				Broadcast(ChatColor.YELLOW + getLangConfig("MsgNotDnd").replace("%player%", player.player.getDisplayName()));
+				ep.isDnd = false;
+				ep.timeUnset = t;
+				Broadcast(ChatColor.YELLOW + getLangConfig("MsgNotDnd").replace("%player%", player.getDisplayName()));
 			}else{
-				player.player.sendMessage(ChatColor.RED + getLangConfig("ErrDisableDND").replace("%t%", "" + ((player.timeDnded + configmain.getInt("TimeDisableAFKDND",5000) - t) / 1000 + 1)));
+				player.sendMessage(ChatColor.RED + getLangConfig("ErrDisableDND").replace("%t%", "" + ((ep.timeDnded + configmain.getInt("TimeDisableAFKDND",5000) - t) / 1000 + 1)));
 			}	
 		}else
 		{
-			if(player.timeUnset < (t - configmain.getInt("TimeBetweenAFKDND",30000)))
+			if(ep.timeUnset < (t - configmain.getInt("TimeBetweenAFKDND",5000)))
 			{
-				player.isDnd = true;
-				player.timeDnded = t;
-				Broadcast(ChatColor.YELLOW + getLangConfig("MsgDnd").replace("%player%", player.player.getDisplayName()));
+				ep.isDnd = true;
+				ep.timeDnded = t;
+				Broadcast(ChatColor.YELLOW + getLangConfig("MsgDnd").replace("%player%", player.getDisplayName()));
 			}else{
-				player.player.sendMessage(ChatColor.RED + getLangConfig("ErrEnableDND").replace("%t%", "" + ((player.timeUnset + configmain.getInt("TimeBetweenAFKDND",5000) - t) / 1000 + 1)));
+				player.sendMessage(ChatColor.RED + getLangConfig("ErrEnableDND").replace("%t%", "" + ((ep.timeUnset + configmain.getInt("TimeBetweenAFKDND",5000) - t) / 1000 + 1)));
 			}
 		}
 	}
 
 
 	
-	public void toggleAfk(ExPlayer player) {
+	public void toggleAfk(Player player, ExPlayer ep) {
 		long t = Calendar.getInstance().getTimeInMillis();
 		
-		if (isPlayerAfk(player))
+		if (isPlayerAfk(ep))
 		{
-			player.isAfk = false;
-			player.timeUnset = t;
-			Broadcast(ChatColor.YELLOW + getLangConfig("MsgNotAfk").replace("%player%", player.player.getDisplayName()));
+			ep.isAfk = false;
+			ep.timeUnset = t;
+			Broadcast(ChatColor.YELLOW + getLangConfig("MsgNotAfk").replace("%player%", player.getDisplayName()));
 		}else
 		{
-			if(player.timeUnset < (t - configmain.getInt("TimeBetweenAFKDND",30000)))
+			if(ep.timeUnset < (t - configmain.getInt("TimeBetweenAFKDND",30000)))
 			{
-				player.isAfk = true;
-				player.timeAfked = t;
-				Broadcast(ChatColor.YELLOW + getLangConfig("MsgAfk").replace("%player%", player.player.getDisplayName()));
+				ep.isAfk = true;
+				ep.timeAfked = t;
+				Broadcast(ChatColor.YELLOW + getLangConfig("MsgAfk").replace("%player%", player.getDisplayName()));
 			}else{
-				player.player.sendMessage(ChatColor.RED + getLangConfig("ErrEnableAFK").replace("%t%", "" + ((player.timeUnset + configmain.getInt("TimeBetweenAFKDND",30000) - t) / 1000 + 1)));
+				player.sendMessage(ChatColor.RED + getLangConfig("ErrEnableAFK").replace("%t%", "" + ((ep.timeUnset + configmain.getInt("TimeBetweenAFKDND",30000) - t) / 1000 + 1)));
 			}
 		}
 	}
 	
-	public void toggleIgnorePlayer(ExPlayer sender, Player player)
+	public void toggleIgnorePlayer(Player player, ExPlayer ep, Player ignored)
 	{
-		if (sender.IsIgnoring(player))
+		if (ep.IsIgnoring(ignored.getName()))
 		{
-			sender.removeIgnoring(player);
-			sender.player.sendMessage(ChatColor.YELLOW + getLangConfig("MsgNotPlayerIsIgnored").replace("%player%", player.getDisplayName()));
+			ep.removeIgnoring(ignored.getName());
+			player.sendMessage(ChatColor.YELLOW + getLangConfig("MsgNotPlayerIsIgnored").replace("%player%", ignored.getDisplayName()));
 		}
 		else
 		{
-			sender.addIgnoring(player);
-			sender.player.sendMessage(ChatColor.YELLOW + getLangConfig("MsgPlayerIsIgnored").replace("%player%", player.getDisplayName()));
+			ep.addIgnoring(ignored.getName());
+			player.sendMessage(ChatColor.YELLOW + getLangConfig("MsgPlayerIsIgnored").replace("%player%", ignored.getDisplayName()));
 		}
 	}
 	
-	public void toggleMutePlayer(ExPlayer sender, ExPlayer player, boolean Mute)
+	public void toggleMutePlayer(CommandSender player, ExPlayer ep, Player muteep, boolean Mute)
 	{
-		if (!player.isMuted && Mute)
+		if (!ep.isMuted && Mute)
 		{
-			player.isMuted = true;
-			Broadcast(ChatColor.YELLOW + getLangConfig("MsgSetPlayerMuted").replace("%player1%", player.player.getDisplayName()).replace("%player2%", sender.player.getDisplayName()));
+			ep.isMuted = true;
+			Broadcast(ChatColor.YELLOW + getLangConfig("MsgSetPlayerMuted").replace("%player1%", muteep.getDisplayName()).replace("%player2%", player.getName()));
 		}
-		else if(player.isMuted && !Mute)
+		else if(ep.isMuted && !Mute)
 		{
-			player.isMuted = false;
-			Broadcast(ChatColor.YELLOW + getLangConfig("MsgSetPlayerUnmuted").replace("%player1%", player.player.getDisplayName()).replace("%player2%", sender.player.getDisplayName()));
+			ep.isMuted = false;
+			Broadcast(ChatColor.YELLOW + getLangConfig("MsgSetPlayerUnmuted").replace("%player1%", muteep.getDisplayName()).replace("%player2%", player.getName()));
 		}else{
 			if(Mute)
 			{
-				sender.player.sendMessage(getLangConfig("MsgPlayerAlreadyMuted").replace("%player%", player.player.getDisplayName()));
+				player.sendMessage(getLangConfig("MsgPlayerAlreadyMuted").replace("%player%", muteep.getDisplayName()));
 			}else
 			{
-				sender.player.sendMessage(getLangConfig("MsgPlayerIsNotMuted").replace("%player%", player.player.getDisplayName()));
+				player.sendMessage(getLangConfig("MsgPlayerIsNotMuted").replace("%player%", muteep.getDisplayName()));
 			}
 		}
 	}
 	
 	public boolean isPlayerAfk(ExPlayer player)
 	{
-		if (this.playerlist.contains(player))
-			return player.isAfk;
-		else
-			return false;
+		return player.isAfk;
 	}
 	
 	public boolean isPlayerDnd(ExPlayer player)
 	{
-		if (this.playerlist.contains(player))
-			return player.isDnd;
-		else
-			return false;
+		return player.isDnd;
 	}
 	
 	public boolean isPlayerNoMsg(ExPlayer player)
 	{
-		if (this.playerlist.contains(player))
-			return player.isNomsg;
-		else
-			return false;
+		return player.isNomsg;
 	}
 	
 	public boolean isPlayerNoChat(ExPlayer player)
 	{
-		if (this.playerlist.contains(player))
-			return player.isNochat;
-		else
-			return false;
+		return player.isNochat;
 	}
 	
 	public boolean isPlayerMuted(ExPlayer player)
 	{
-		if(this.playerlist.contains(player))
-			return player.isMuted;
-		else
-			return false;
+		return player.isMuted;
 	}
 	
-	public Boolean checkPermissions(Player player, String node) {
-		// Permissions
-        if (this.permissions != null) {
-            if (this.permissions.has(player, node))
-                return true;
-        // Pex
-        } else if(this.permpex != null) {
-        	if (this.permpex.has(player, node))
-        		return true;
+	public Boolean checkPermissions(CommandSender sender, String node) {
         // SuperPerms
-        } else if (player.hasPermission(node) || player.hasPermission(pdfdescription + ".*") || player.hasPermission("*")) {
+        if (sender.hasPermission(node) || sender.hasPermission(pdfdescription + ".*") || sender.hasPermission("*")) {
               return true;
-        } else if (player.isOp()) {
+        } else if (sender.isOp()) {
             return true;
         }
         return false;
@@ -558,12 +518,10 @@ public class PlayerStatus extends JavaPlugin {
 	{
 		
 		for(Player p: getServer().getOnlinePlayers())
-		{
-			int i = playerlist.indexOf(getExPlayer(p));
-			
-			if (i != -1)
+		{			
+			if (playerlist.containsKey(p.getName()))
 			{
-				ExPlayer ep = playerlist.get(i);
+				ExPlayer ep = playerlist.get(p.getName());
 				if (!ep.isNochat)
 				{
 					p.sendMessage(message);

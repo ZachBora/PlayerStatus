@@ -7,16 +7,17 @@ import org.bukkit.entity.Player;
 
 public class ExPlayer  {
 	
-	public Player player;
+	//public Player player;
 	
-	public ExPlayer(Player p) {
-		player = p;
+	//public ExPlayer(Player p) {
+	public ExPlayer() {
+		//player = p;
 		isAfk = false;
 		isDnd = false;
 		isNomsg = false;
 		isNochat = false;
 		isMuted = false;
-		ignoredplayers = new HashSet<Player>();
+		ignoredplayers = new HashSet<String>();
 	}
 			
 	public boolean isAfk;
@@ -29,17 +30,17 @@ public class ExPlayer  {
 	public long timeDnded;
 	public long timeUnset;
 	
-	public Set<Player> ignoredplayers;
+	public Set<String> ignoredplayers;
 	
-	public boolean IsIgnoring(Player player)
+	public boolean IsIgnoring(String player)
 	{
 		return ignoredplayers.contains(player);
 	}
-	public void addIgnoring(Player player)
+	public void addIgnoring(String player)
 	{
 		ignoredplayers.add(player);
 	}
-	public void removeIgnoring(Player player)
+	public void removeIgnoring(String player)
 	{
 		ignoredplayers.remove(player);
 	}

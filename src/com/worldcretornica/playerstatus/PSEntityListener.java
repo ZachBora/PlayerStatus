@@ -1,19 +1,19 @@
 package com.worldcretornica.playerstatus;
 
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.EntityListener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 
-public class PSEntityListener extends EntityListener {
+public class PSEntityListener implements Listener {
 	
-	public static PlayerStatus plugin;
 	
 	public PSEntityListener(PlayerStatus instance) {
-		plugin = instance;
 	}
 
-	@Override
-	public void onEntityDeath(EntityDeathEvent event) {
+	@EventHandler(priority = EventPriority.NORMAL)
+	public void onEntityDeath(final EntityDeathEvent event) {
 		if (event instanceof PlayerDeathEvent) {
             PlayerDeathEvent e = (PlayerDeathEvent) event;
             e.setDeathMessage(null);
